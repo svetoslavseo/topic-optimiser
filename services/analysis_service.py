@@ -36,10 +36,32 @@ class AnalysisService:
         
         genai.configure(api_key=api_key)
         
-        # For version 0.7.2, use gemini-pro directly (more stable)
+        # Check available models and use the correct one
         try:
-            self.model = genai.GenerativeModel('gemini-pro')
-            logger.info("Using gemini-pro model")
+            # First try the most common model names
+            models_to_try = [
+                'gemini-1.5-flash',
+                'gemini-1.5-pro', 
+                'models/gemini-1.5-flash',
+                'models/gemini-1.5-pro',
+                'gemini-1.0-pro',
+                'models/gemini-1.0-pro'
+            ]
+            
+            model_created = False
+            for model_name in models_to_try:
+                try:
+                    self.model = genai.GenerativeModel(model_name)
+                    logger.info(f"Successfully using model: {model_name}")
+                    model_created = True
+                    break
+                except Exception as model_error:
+                    logger.info(f"Model {model_name} failed: {model_error}")
+                    continue
+            
+            if not model_created:
+                raise ValueError("No suitable text generation model found")
+                
         except Exception as e:
             logger.error(f"Failed to create model: {e}")
             raise ValueError(f"Failed to initialize Gemini model: {e}")
@@ -53,6 +75,8 @@ class AnalysisService:
             models = genai.list_models()
             available_models = [m.name for m in models if 'generateContent' in m.supported_generation_methods]
             
+            logger.info(f"Available models: {available_models}")
+            
             if not available_models:
                 return False, "No available models found. Check API key permissions."
             
@@ -62,7 +86,10 @@ class AnalysisService:
                 return False, "No response received from API"
             if not response.text:
                 return False, "Empty response from API"
-            return True, f"Connection successful using model: {self.model._model_name}"
+            
+            # Get model name safely
+            model_name = getattr(self.model, '_model_name', 'unknown')
+            return True, f"Connection successful using model: {model_name}. Available models: {len(available_models)} found"
             
         except Exception as e:
             error_msg = str(e)
