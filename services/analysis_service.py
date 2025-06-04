@@ -3,8 +3,11 @@ from typing import List, Dict, Any
 import json
 import re
 import logging
+import os
 from dataclasses import dataclass
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -23,12 +26,24 @@ class AnalysisService:
         if not api_key:
             raise ValueError("Gemini API key is required")
         
+        # Debug logging
+        logger.info(f"Initializing with API key length: {len(api_key)}")
+        logger.info(f"API key starts with: {api_key[:10] if len(api_key) > 10 else api_key}")
+        
+        # Set environment variable as backup
+        import os
+        os.environ['GOOGLE_API_KEY'] = api_key
+        
         genai.configure(api_key=api_key)
-        # Try gemini-1.5-flash first, fallback to gemini-pro
+        
+        # For version 0.7.2, use gemini-pro directly (more stable)
         try:
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
-        except:
             self.model = genai.GenerativeModel('gemini-pro')
+            logger.info("Using gemini-pro model")
+        except Exception as e:
+            logger.error(f"Failed to create model: {e}")
+            raise ValueError(f"Failed to initialize Gemini model: {e}")
+        
         self.api_key = api_key
     
     def test_api_connection(self) -> tuple[bool, str]:
