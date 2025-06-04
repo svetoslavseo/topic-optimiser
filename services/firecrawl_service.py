@@ -29,14 +29,37 @@ class FirecrawlService:
                 only_main_content=True
             )
             
-            if not result or not result.get('markdown'):
+            if not result:
                 raise Exception('Failed to scrape content from the URL')
             
+            # Handle both response object and dict formats
+            if hasattr(result, 'markdown'):
+                # Response object format
+                markdown = result.markdown
+                metadata = result.metadata if hasattr(result, 'metadata') else {}
+            else:
+                # Dictionary format
+                markdown = result.get('markdown')
+                metadata = result.get('metadata', {})
+            
+            if not markdown:
+                raise Exception('No markdown content returned from the URL')
+            
+            # Extract metadata safely
+            if isinstance(metadata, dict):
+                source_url = metadata.get('sourceURL', url)
+                title = metadata.get('title')
+                description = metadata.get('description')
+            else:
+                source_url = getattr(metadata, 'sourceURL', url) if metadata else url
+                title = getattr(metadata, 'title', None) if metadata else None
+                description = getattr(metadata, 'description', None) if metadata else None
+            
             return {
-                'url': result.get('metadata', {}).get('sourceURL', url),
-                'markdown': result['markdown'],
-                'title': result.get('metadata', {}).get('title'),
-                'description': result.get('metadata', {}).get('description')
+                'url': source_url,
+                'markdown': markdown,
+                'title': title,
+                'description': description
             }
             
         except Exception as e:
@@ -64,16 +87,45 @@ class FirecrawlService:
                 }
             )
             
-            if not crawl_result or not crawl_result.get('data'):
+            if not crawl_result:
                 raise Exception('Failed to crawl website')
             
+            # Handle both response object and dict formats
+            if hasattr(crawl_result, 'data'):
+                data = crawl_result.data
+            else:
+                data = crawl_result.get('data', [])
+            
+            if not data:
+                raise Exception('No pages were crawled')
+            
             results = []
-            for item in crawl_result['data']:
+            for item in data:
+                # Handle both response object and dict formats for each item
+                if hasattr(item, 'markdown'):
+                    # Response object format
+                    markdown = item.markdown
+                    metadata = item.metadata if hasattr(item, 'metadata') else {}
+                else:
+                    # Dictionary format
+                    markdown = item.get('markdown', '')
+                    metadata = item.get('metadata', {})
+                
+                # Extract metadata safely
+                if isinstance(metadata, dict):
+                    source_url = metadata.get('sourceURL', '')
+                    title = metadata.get('title')
+                    description = metadata.get('description')
+                else:
+                    source_url = getattr(metadata, 'sourceURL', '') if metadata else ''
+                    title = getattr(metadata, 'title', None) if metadata else None
+                    description = getattr(metadata, 'description', None) if metadata else None
+                
                 results.append({
-                    'url': item.get('metadata', {}).get('sourceURL', ''),
-                    'markdown': item.get('markdown', ''),
-                    'title': item.get('metadata', {}).get('title'),
-                    'description': item.get('metadata', {}).get('description')
+                    'url': source_url,
+                    'markdown': markdown,
+                    'title': title,
+                    'description': description
                 })
             
             return results
