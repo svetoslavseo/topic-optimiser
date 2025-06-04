@@ -25,6 +25,17 @@ class AnalysisService:
         
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel('gemini-pro')
+        self.api_key = api_key
+    
+    def test_api_connection(self) -> bool:
+        """Test if the API key is valid and working"""
+        try:
+            # Make a simple test request
+            response = self.model.generate_content("Hello, respond with 'OK' if you can see this.")
+            return response and response.text and "OK" in response.text.upper()
+        except Exception as e:
+            logger.error(f"API connection test failed: {str(e)}")
+            return False
     
     def analyze_content(self, content: str, queries: List[str]) -> AnalysisResults:
         """
@@ -41,20 +52,45 @@ class AnalysisService:
             prompt = self._create_analysis_prompt(content, queries)
             response = self.model.generate_content(prompt)
             
-            if not response or not response.text:
-                raise Exception("No response from Gemini API")
+            if not response:
+                raise Exception("No response from Gemini API - check your API key and quota")
+            
+            if not response.text:
+                # Check if there's a finish reason that explains the issue
+                if hasattr(response, 'candidates') and response.candidates:
+                    candidate = response.candidates[0]
+                    if hasattr(candidate, 'finish_reason'):
+                        if candidate.finish_reason == 'SAFETY':
+                            raise Exception("Content was blocked by safety filters")
+                        elif candidate.finish_reason == 'MAX_TOKENS':
+                            raise Exception("Response was truncated due to token limit")
+                        else:
+                            raise Exception(f"API response issue: {candidate.finish_reason}")
+                raise Exception("Empty response from Gemini API")
             
             return self._parse_response(response.text)
             
         except Exception as e:
-            logger.error(f"Error analyzing content: {str(e)}")
-            # Return default results on error
+            error_msg = str(e)
+            logger.error(f"Error analyzing content: {error_msg}")
+            
+            # Provide more specific error messages
+            if "API_KEY_INVALID" in error_msg or "invalid API key" in error_msg.lower():
+                error_detail = "Invalid API key. Please check your Gemini API key."
+            elif "quota" in error_msg.lower() or "limit" in error_msg.lower():
+                error_detail = "API quota exceeded. Please check your usage limits."
+            elif "safety" in error_msg.lower():
+                error_detail = "Content blocked by safety filters. Try different content."
+            else:
+                error_detail = f"API Error: {error_msg}"
+            
+            # Return default results with specific error
             return AnalysisResults(
                 embedding_relevance_score=0,
                 semantic_density_score=0,
                 authority_score=0,
-                semantic_gaps=["Analysis failed. Please check your API key and try again."],
-                recommendations=["Ensure your API key is valid and the content is not too long."]
+                semantic_gaps=[f"Analysis failed: {error_detail}"],
+                recommendations=["Please resolve the API issue and try again."]
             )
     
     def _create_analysis_prompt(self, content: str, queries: List[str]) -> str:

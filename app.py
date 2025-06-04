@@ -284,23 +284,36 @@ def main():
             else:
                 query_list = [q.strip() for q in queries.split('\n') if q.strip()]
                 
-                with st.spinner("Generating insights..."):
+                with st.spinner("Testing API connection..."):
                     try:
                         if not gemini_api_key.strip():
                             st.error("Please enter a valid Gemini API key")
                             return
                         
+                        # First test the API connection
                         analysis_service = AnalysisService(gemini_api_key.strip())
-                        results = analysis_service.analyze_content(st.session_state.content, query_list)
                         
-                        # Check if analysis actually succeeded
-                        if "Analysis failed" in str(results.semantic_gaps):
-                            st.error("❌ Analysis failed. Please check your Gemini API key and try again.")
+                        # Test connection
+                        if not analysis_service.test_api_connection():
+                            st.error("❌ API connection failed. Please check your Gemini API key.")
                             st.info("💡 Make sure your API key is valid and has credits available.")
-                        else:
-                            st.session_state.analysis_results = results
-                            st.success("✅ Analysis complete!")
-                            st.rerun()
+                            return
+                        
+                        # If connection works, proceed with analysis
+                        with st.spinner("Generating insights..."):
+                            results = analysis_service.analyze_content(st.session_state.content, query_list)
+                            
+                            # Check if analysis actually succeeded
+                            if "Analysis failed" in str(results.semantic_gaps):
+                                # Extract the specific error message
+                                error_msg = results.semantic_gaps[0] if results.semantic_gaps else "Unknown error"
+                                st.error(f"❌ {error_msg}")
+                                st.info("💡 Please resolve the issue and try again.")
+                            else:
+                                st.session_state.analysis_results = results
+                                st.success("✅ Analysis complete!")
+                                st.rerun()
+                                
                     except ValueError as e:
                         st.error(f"❌ API Key Error: {str(e)}")
                     except Exception as e:
