@@ -24,126 +24,88 @@ st.set_page_config(
 st.markdown("""
 <style>
     .main {
-        background: linear-gradient(to bottom right, #1e293b, #374151, #313856);
-        color: white;
+        background-color: white;
+        color: black;
     }
     
     .stApp {
-        background: linear-gradient(to bottom right, #1e293b, #374151, #313856);
+        background-color: white;
     }
     
     .title {
-        color: white;
+        color: #2c3e50;
         text-align: center;
-        font-size: 3rem;
+        font-size: 2.5rem;
         font-weight: bold;
         margin-bottom: 1rem;
     }
     
     .subtitle {
-        color: white;
+        color: #7f8c8d;
         text-align: center;
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         margin-bottom: 2rem;
-        opacity: 0.9;
     }
     
     .metric-card {
-        background-color: rgba(255, 255, 255, 0.95);
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
         padding: 1.5rem;
         margin: 1rem 0;
-        color: #1e293b;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        color: black;
     }
     
     .metric-header {
-        color: #1e293b;
-        font-size: 1.2rem;
+        color: #2c3e50;
+        font-size: 1.1rem;
         font-weight: 600;
         margin-bottom: 0.5rem;
     }
     
     .metric-description {
-        color: #374151;
+        color: #495057;
         font-size: 0.9rem;
         line-height: 1.4;
     }
     
     .stButton > button {
-        background-color: #ff8c42;
+        background-color: #007bff;
         color: white;
         border: none;
-        border-radius: 8px;
+        border-radius: 6px;
         padding: 0.5rem 1rem;
-        font-weight: 600;
-        transition: background-color 0.3s;
+        font-weight: 500;
     }
     
     .stButton > button:hover {
-        background-color: #ff7a28;
+        background-color: #0056b3;
     }
     
     .footer {
         text-align: center;
-        color: white;
+        color: #6c757d;
         font-size: 0.9rem;
         margin-top: 3rem;
         padding: 1rem;
-        opacity: 0.8;
+        border-top: 1px solid #dee2e6;
     }
     
     .crawl-info {
-        background-color: rgba(255, 140, 66, 0.2);
-        border: 1px solid #ff8c42;
-        border-radius: 8px;
+        background-color: #e3f2fd;
+        border: 1px solid #2196f3;
+        border-radius: 6px;
         padding: 1rem;
         margin: 1rem 0;
-        color: white;
+        color: #1565c0;
     }
     
     .api-key-section {
-        background-color: rgba(255, 255, 255, 0.95);
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
         padding: 1.5rem;
-        margin: 1rem 0;
-        color: #1e293b;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    
-    /* Make all text inputs white background with dark text */
-    .stTextInput > div > div > input {
-        background-color: white;
-        color: #1e293b;
-        border: 1px solid #d1d5db;
-    }
-    
-    .stTextArea > div > div > textarea {
-        background-color: white;
-        color: #1e293b;
-        border: 1px solid #d1d5db;
-    }
-    
-    .stSelectbox > div > div > div {
-        background-color: white;
-        color: #1e293b;
-    }
-    
-    .stNumberInput > div > div > input {
-        background-color: white;
-        color: #1e293b;
-        border: 1px solid #d1d5db;
-    }
-    
-    /* Labels and text */
-    .stMarkdown, .stText {
-        color: white;
-    }
-    
-    label {
-        color: white !important;
+        margin: 2rem 0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -164,30 +126,37 @@ def main():
     
     # API Key Configuration Section
     st.markdown('<div class="api-key-section">', unsafe_allow_html=True)
-    st.markdown('<h3 style="color: #1e293b; margin-top: 0;">🔑 API Configuration</h3>', unsafe_allow_html=True)
-    st.markdown('<p style="color: #374151; margin-bottom: 1rem;">Please provide your API keys to enable content analysis and web crawling features.</p>', unsafe_allow_html=True)
+    st.markdown('<h3 style="color: #2c3e50; margin-top: 0;">🔑 API Configuration</h3>', unsafe_allow_html=True)
+    st.markdown('<p style="color: #495057; margin-bottom: 1rem;">Please provide your API keys to enable content analysis and web crawling features.</p>', unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
+        st.markdown("**Google Gemini API Key** (Required for analysis)")
         gemini_api_key = st.text_input(
-            "Google Gemini API Key",
+            "Gemini API Key",
             type="password",
-            placeholder="Enter your Gemini API key",
-            help="Get your free API key from https://aistudio.google.com/app/apikey"
+            placeholder="AIza...",
+            help="Get your free API key from https://aistudio.google.com/app/apikey",
+            label_visibility="collapsed"
         )
+        if gemini_api_key:
+            st.success("✅ Gemini API key provided")
+        else:
+            st.info("ℹ️ Required for content analysis")
 
     with col2:
+        st.markdown("**Firecrawl API Key** (Required for web crawling)")
         firecrawl_api_key = st.text_input(
             "Firecrawl API Key", 
             type="password",
-            placeholder="Enter your Firecrawl API key",
-            help="Get your API key from https://www.firecrawl.dev/"
+            placeholder="fc-...",
+            help="Get your API key from https://www.firecrawl.dev/",
+            label_visibility="collapsed"
         )
-
-    if not gemini_api_key:
-        st.warning("⚠️ Gemini API key is required for content analysis")
-    if not firecrawl_api_key:
-        st.warning("⚠️ Firecrawl API key is required for web crawling")
+        if firecrawl_api_key:
+            st.success("✅ Firecrawl API key provided")
+        else:
+            st.info("ℹ️ Required for web crawling")
 
     st.markdown('</div>', unsafe_allow_html=True)
     
@@ -317,13 +286,26 @@ def main():
                 
                 with st.spinner("Generating insights..."):
                     try:
-                        analysis_service = AnalysisService(gemini_api_key)
+                        if not gemini_api_key.strip():
+                            st.error("Please enter a valid Gemini API key")
+                            return
+                        
+                        analysis_service = AnalysisService(gemini_api_key.strip())
                         results = analysis_service.analyze_content(st.session_state.content, query_list)
-                        st.session_state.analysis_results = results
-                        st.success("Analysis complete!")
-                        st.rerun()
+                        
+                        # Check if analysis actually succeeded
+                        if "Analysis failed" in str(results.semantic_gaps):
+                            st.error("❌ Analysis failed. Please check your Gemini API key and try again.")
+                            st.info("💡 Make sure your API key is valid and has credits available.")
+                        else:
+                            st.session_state.analysis_results = results
+                            st.success("✅ Analysis complete!")
+                            st.rerun()
+                    except ValueError as e:
+                        st.error(f"❌ API Key Error: {str(e)}")
                     except Exception as e:
-                        st.error(f"Analysis failed: {str(e)}")
+                        st.error(f"❌ Analysis failed: {str(e)}")
+                        st.info("💡 Please check your API key and internet connection.")
     
     # Analysis Results Section
     if st.session_state.analysis_results:
@@ -414,7 +396,7 @@ def main():
     # Footer
     st.markdown("""
     <div class="footer">
-        <p>&copy; 2024 AI-Powered Topic Optimiser. Powered by <a href="https://storyhawk.io/" target="_blank" style="color: white; text-decoration: none;">StoryHawk</a>.</p>
+        <p>&copy; 2024 AI-Powered Topic Optimiser. Powered by <a href="https://storyhawk.io/" target="_blank" style="color: #007bff; text-decoration: none;">StoryHawk</a>.</p>
     </div>
     """, unsafe_allow_html=True)
 
