@@ -1,0 +1,6 @@
+{
+  "name": "Semantic Optimization Assistant",
+  "description": "An application to analyze content against target queries, providing semantic scores, chunk-level analysis, identified gaps, and overall recommendations to improve AI readiness and SEO performance. Powered by Gemini API.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
