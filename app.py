@@ -294,9 +294,10 @@ def main():
                         analysis_service = AnalysisService(gemini_api_key.strip())
                         
                         # Test connection
-                        if not analysis_service.test_api_connection():
-                            st.error("❌ API connection failed. Please check your Gemini API key.")
-                            st.info("💡 Make sure your API key is valid and has credits available.")
+                        connection_success, connection_message = analysis_service.test_api_connection()
+                        if not connection_success:
+                            st.error(f"❌ API connection failed: {connection_message}")
+                            st.info("💡 This API key works in React but fails in Python. This might be a library or configuration issue.")
                             return
                         
                         # If connection works, proceed with analysis

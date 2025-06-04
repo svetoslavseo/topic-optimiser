@@ -24,18 +24,55 @@ class AnalysisService:
             raise ValueError("Gemini API key is required")
         
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-pro')
+        # Try gemini-1.5-flash first, fallback to gemini-pro
+        try:
+            self.model = genai.GenerativeModel('gemini-1.5-flash')
+        except:
+            self.model = genai.GenerativeModel('gemini-pro')
         self.api_key = api_key
     
-    def test_api_connection(self) -> bool:
+    def test_api_connection(self) -> tuple[bool, str]:
         """Test if the API key is valid and working"""
         try:
-            # Make a simple test request
+            # First test basic API setup
+            models = genai.list_models()
+            available_models = [m.name for m in models if 'generateContent' in m.supported_generation_methods]
+            
+            if not available_models:
+                return False, "No available models found. Check API key permissions."
+            
+            # Test with current model
             response = self.model.generate_content("Hello, respond with 'OK' if you can see this.")
-            return response and response.text and "OK" in response.text.upper()
+            if not response:
+                return False, "No response received from API"
+            if not response.text:
+                return False, "Empty response from API"
+            return True, f"Connection successful using model: {self.model._model_name}"
+            
         except Exception as e:
-            logger.error(f"API connection test failed: {str(e)}")
-            return False
+            error_msg = str(e)
+            logger.error(f"API connection test failed: {error_msg}")
+            
+            # Try to provide more specific debugging info
+            try:
+                # Test basic API access
+                models = genai.list_models()
+                model_names = [m.name for m in models]
+                debug_info = f"Available models: {model_names[:3]}..."  # Show first 3 models
+            except Exception as list_error:
+                debug_info = f"Cannot list models: {str(list_error)}"
+            
+            # Provide specific error details
+            if "403" in error_msg:
+                return False, f"API access forbidden (403). {debug_info}. Error: {error_msg}"
+            elif "401" in error_msg:
+                return False, f"Invalid API key (401). {debug_info}. Error: {error_msg}"
+            elif "429" in error_msg:
+                return False, f"Rate limit exceeded (429). {debug_info}. Error: {error_msg}"
+            elif "API_KEY_INVALID" in error_msg:
+                return False, f"Invalid API key format. {debug_info}. Error: {error_msg}"
+            else:
+                return False, f"Connection failed. {debug_info}. Error: {error_msg}"
     
     def analyze_content(self, content: str, queries: List[str]) -> AnalysisResults:
         """
