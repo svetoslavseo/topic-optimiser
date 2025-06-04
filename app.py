@@ -122,43 +122,6 @@ class AnalysisResults:
 def main():
     # Header
     st.markdown('<h1 class="title">AI-Powered Topic Optimiser</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="subtitle">Elevate your content\'s AI readiness.</p>', unsafe_allow_html=True)
-    
-    # API Key Configuration Section
-    st.markdown('<div class="api-key-section">', unsafe_allow_html=True)
-    st.markdown('<h3 style="color: #2c3e50; margin-top: 0;">🔑 API Configuration</h3>', unsafe_allow_html=True)
-    st.markdown('<p style="color: #495057; margin-bottom: 1rem;">Please provide your API keys to enable content analysis and web crawling features.</p>', unsafe_allow_html=True)
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("**Google Gemini API Key** (Required for analysis)")
-        gemini_api_key = st.text_input(
-            "Gemini API Key",
-            type="password",
-            placeholder="AIza...",
-            help="Get your free API key from https://aistudio.google.com/app/apikey",
-            label_visibility="collapsed"
-        )
-        if gemini_api_key:
-            st.success("✅ Gemini API key provided")
-        else:
-            st.info("ℹ️ Required for content analysis")
-
-    with col2:
-        st.markdown("**Firecrawl API Key** (Required for web crawling)")
-        firecrawl_api_key = st.text_input(
-            "Firecrawl API Key", 
-            type="password",
-            placeholder="fc-...",
-            help="Get your API key from https://www.firecrawl.dev/",
-            label_visibility="collapsed"
-        )
-        if firecrawl_api_key:
-            st.success("✅ Firecrawl API key provided")
-        else:
-            st.info("ℹ️ Required for web crawling")
-
-    st.markdown('</div>', unsafe_allow_html=True)
     
     # Initialize session state
     if 'analysis_results' not in st.session_state:
@@ -230,12 +193,12 @@ def main():
                     st.error("Please enter a URL")
                 elif not validate_url(url):
                     st.error("Please enter a valid URL (include http:// or https://)")
-                elif not firecrawl_api_key:
-                    st.error("Firecrawl API key is required for web crawling. Please enter your API key above.")
+                elif 'firecrawl_api_key' not in st.session_state or not st.session_state.get('firecrawl_api_key'):
+                    st.error("Firecrawl API key is required for web crawling. Please enter your API key in the configuration section below.")
                 else:
                         with st.spinner("Crawling content..."):
                             try:
-                                firecrawl_service = FirecrawlService(firecrawl_api_key)
+                                firecrawl_service = FirecrawlService(st.session_state.firecrawl_api_key)
                                 
                                 if crawl_mode == "Single page":
                                     result = firecrawl_service.scrape_url(url)
@@ -279,47 +242,50 @@ def main():
                 st.error("Please provide content to analyse")
             elif not queries.strip():
                 st.error("Please provide target queries")
-            elif not gemini_api_key:
-                st.error("Gemini API key is required for content analysis. Please enter your API key above.")
             else:
-                query_list = [q.strip() for q in queries.split('\n') if q.strip()]
-                
-                with st.spinner("Testing API connection..."):
-                    try:
-                        if not gemini_api_key.strip():
-                            st.error("Please enter a valid Gemini API key")
-                            return
-                        
-                        # First test the API connection
-                        analysis_service = AnalysisService(gemini_api_key.strip())
-                        
-                        # Test connection
-                        connection_success, connection_message = analysis_service.test_api_connection()
-                        if not connection_success:
-                            st.error(f"❌ API connection failed: {connection_message}")
-                            st.info("💡 This API key works in React but fails in Python. This might be a library or configuration issue.")
-                            return
-                        
-                        # If connection works, proceed with analysis
-                        with st.spinner("Generating insights..."):
-                            results = analysis_service.analyze_content(st.session_state.content, query_list)
+                # Check if API keys are set (they are now at the bottom)
+                if 'gemini_api_key' not in st.session_state or not st.session_state.get('gemini_api_key'):
+                    st.error("Gemini API key is required for content analysis. Please enter your API key in the configuration section below.")
+                else:
+                    query_list = [q.strip() for q in queries.split('\n') if q.strip()]
+                    
+                    with st.spinner("Testing API connection..."):
+                        try:
+                            gemini_api_key = st.session_state.gemini_api_key
+                            if not gemini_api_key.strip():
+                                st.error("Please enter a valid Gemini API key")
+                                return
                             
-                            # Check if analysis actually succeeded
-                            if "Analysis failed" in str(results.semantic_gaps):
-                                # Extract the specific error message
-                                error_msg = results.semantic_gaps[0] if results.semantic_gaps else "Unknown error"
-                                st.error(f"❌ {error_msg}")
-                                st.info("💡 Please resolve the issue and try again.")
-                            else:
-                                st.session_state.analysis_results = results
-                                st.success("✅ Analysis complete!")
-                                st.rerun()
+                            # First test the API connection
+                            analysis_service = AnalysisService(gemini_api_key.strip())
+                            
+                            # Test connection
+                            connection_success, connection_message = analysis_service.test_api_connection()
+                            if not connection_success:
+                                st.error(f"❌ API connection failed: {connection_message}")
+                                st.info("💡 This API key works in React but fails in Python. This might be a library or configuration issue.")
+                                return
+                            
+                            # If connection works, proceed with analysis
+                            with st.spinner("Generating insights..."):
+                                results = analysis_service.analyze_content(st.session_state.content, query_list)
                                 
-                    except ValueError as e:
-                        st.error(f"❌ API Key Error: {str(e)}")
-                    except Exception as e:
-                        st.error(f"❌ Analysis failed: {str(e)}")
-                        st.info("💡 Please check your API key and internet connection.")
+                                # Check if analysis actually succeeded
+                                if "Analysis failed" in str(results.semantic_gaps):
+                                    # Extract the specific error message
+                                    error_msg = results.semantic_gaps[0] if results.semantic_gaps else "Unknown error"
+                                    st.error(f"❌ {error_msg}")
+                                    st.info("💡 Please resolve the issue and try again.")
+                                else:
+                                    st.session_state.analysis_results = results
+                                    st.success("✅ Analysis complete!")
+                                    st.rerun()
+                                    
+                        except ValueError as e:
+                            st.error(f"❌ API Key Error: {str(e)}")
+                        except Exception as e:
+                            st.error(f"❌ Analysis failed: {str(e)}")
+                            st.info("💡 Please check your API key and internet connection.")
     
     # Analysis Results Section
     if st.session_state.analysis_results:
@@ -407,10 +373,51 @@ def main():
         </div>
         """, unsafe_allow_html=True)
     
+    # API Key Configuration Section (moved to bottom)
+    st.markdown("---")
+    st.markdown('<div class="api-key-section">', unsafe_allow_html=True)
+    st.markdown('<h3 style="color: #2c3e50; margin-top: 0;">🔑 API Configuration</h3>', unsafe_allow_html=True)
+    st.markdown('<p style="color: #495057; margin-bottom: 1rem;">Please provide your API keys to enable content analysis and web crawling features.</p>', unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("**Google Gemini API Key** (Required for analysis)")
+        gemini_api_key = st.text_input(
+            "Gemini API Key",
+            type="password",
+            placeholder="AIza...",
+            help="Get your free API key from https://aistudio.google.com/app/apikey",
+            label_visibility="collapsed",
+            key="gemini_api_input"
+        )
+        if gemini_api_key:
+            st.session_state.gemini_api_key = gemini_api_key
+            st.success("✅ Gemini API key provided")
+        else:
+            st.info("ℹ️ Required for content analysis")
+
+    with col2:
+        st.markdown("**Firecrawl API Key** (Required for web crawling)")
+        firecrawl_api_key = st.text_input(
+            "Firecrawl API Key", 
+            type="password",
+            placeholder="fc-...",
+            help="Get your API key from https://www.firecrawl.dev/",
+            label_visibility="collapsed",
+            key="firecrawl_api_input"
+        )
+        if firecrawl_api_key:
+            st.session_state.firecrawl_api_key = firecrawl_api_key
+            st.success("✅ Firecrawl API key provided")
+        else:
+            st.info("ℹ️ Required for web crawling")
+
+    st.markdown('</div>', unsafe_allow_html=True)
+    
     # Footer
     st.markdown("""
     <div class="footer">
-        <p>&copy; 2024 AI-Powered Topic Optimiser. Powered by <a href="https://storyhawk.io/" target="_blank" style="color: #007bff; text-decoration: none;">StoryHawk</a>.</p>
+        <p>&copy; 2024 AI-Powered Topic Optimiser. Powered by <a href="https://svetoslav.co.uk/" target="_blank" style="color: #007bff; text-decoration: none;">Svet Petkov</a>.</p>
     </div>
     """, unsafe_allow_html=True)
 
