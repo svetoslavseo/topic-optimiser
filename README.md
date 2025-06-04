@@ -1,14 +1,15 @@
-# AI-Powered Topic Optimizer
+# AI-Powered Topic Optimiser
 
-An AI-powered Streamlit application that helps optimize content for better semantic understanding and machine readability. Features web crawling capabilities powered by Firecrawl and advanced content analysis using Google Gemini AI.
+An AI-powered Streamlit application that helps optimise content for better semantic understanding and machine readability. Features web crawling capabilities powered by Firecrawl and advanced content analysis using Google Gemini AI.
 
 ## Features
 
-- **🔍 Content Analysis**: Analyze text content for semantic density, relevance, and authority scores
+- **🔍 Content Analysis**: Analyse text content for semantic density, relevance, and authority scores
 - **🌐 Web Crawling**: Crawl web pages or entire websites using Firecrawl API
-- **🤖 AI-Powered Insights**: Get recommendations for improving content optimization using Gemini AI
-- **📊 Interactive Visualizations**: Beautiful charts and metrics using Plotly
+- **🤖 AI-Powered Insights**: Get recommendations for improving content optimisation using Gemini AI
+- **📊 Interactive Visualisations**: Beautiful charts and metrics using Plotly
 - **⚡ Real-time Processing**: Instant analysis and feedback with Streamlit
+- **🔑 User-friendly API Configuration**: Enter API keys directly in the interface
 
 ## Prerequisites
 
@@ -28,17 +29,11 @@ An AI-powered Streamlit application that helps optimize content for better seman
    pip install -r requirements.txt
    ```
 
-3. **Set up your API keys:**
-   - Create a `.env` file in the root directory
-   - Add your API keys:
-   ```env
-   FIRECRAWL_API_KEY=your_firecrawl_api_key_here
-   GEMINI_API_KEY=your_gemini_api_key_here
-   ```
-
-4. **Get your API keys:**
-   - **Gemini API**: Visit [Google AI Studio](https://aistudio.google.com/) to get your Gemini API key
+3. **Get your API keys (required for functionality):**
+   - **Gemini API**: Visit [Google AI Studio](https://aistudio.google.com/app/apikey) to get your free Gemini API key
    - **Firecrawl API**: Visit [Firecrawl.dev](https://www.firecrawl.dev/) to get your Firecrawl API key (free tier available)
+   
+   ℹ️ **Note**: You'll enter these API keys directly in the application interface - no environment file setup required!
 
 ## Run the Application
 
@@ -50,15 +45,16 @@ The application will open in your default web browser at `http://localhost:8501`
 
 ## Usage
 
-1. **📝 Manual Input**: Enter your content directly in the text area
-2. **🌐 Web Crawling**: Switch to "Crawl URL" mode and enter a website URL to automatically extract content
-3. **🎯 Query Analysis**: Add search queries to analyze how well your content matches specific search terms
-4. **⚡ Get Insights**: Click "Analyze Content" to receive AI-powered optimization recommendations
+1. **🔑 API Setup**: Enter your Gemini and Firecrawl API keys in the configuration section at the top
+2. **📝 Manual Input**: Enter your content directly in the text area
+3. **🌐 Web Crawling**: Switch to "Crawl URL" mode and enter a website URL to automatically extract content
+4. **🎯 Query Analysis**: Add search queries to analyse how well your content matches specific search terms
+5. **⚡ Get Insights**: Click "Analyse Content" to receive AI-powered optimisation recommendations
 
 ## Project Structure
 
 ```
-ai-powered-topic-optimizer/
+ai-powered-topic-optimiser/
 ├── app.py                 # Main Streamlit application
 ├── requirements.txt       # Python dependencies
 ├── config.py             # Configuration and environment variables
@@ -66,7 +62,7 @@ ai-powered-topic-optimizer/
 │   ├── firecrawl_service.py    # Web crawling functionality
 │   └── analysis_service.py     # AI content analysis
 ├── components/
-│   └── metrics_charts.py       # Plotly visualizations
+│   └── metrics_charts.py       # Plotly visualisations
 ├── utils/
 │   └── helpers.py             # Utility functions
 └── README.md

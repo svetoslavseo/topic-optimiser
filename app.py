@@ -14,7 +14,7 @@ from utils.helpers import validate_url
 
 # Configure Streamlit page
 st.set_page_config(
-    page_title="AI-Powered Topic Optimizer",
+    page_title="AI-Powered Topic Optimiser",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -25,7 +25,7 @@ st.markdown("""
 <style>
     .main {
         background: linear-gradient(to bottom right, #1e293b, #374151, #313856);
-        color: #f1f5f9;
+        color: white;
     }
     
     .stApp {
@@ -41,29 +41,32 @@ st.markdown("""
     }
     
     .subtitle {
-        color: #94a3b8;
+        color: white;
         text-align: center;
         font-size: 1.2rem;
         margin-bottom: 2rem;
+        opacity: 0.9;
     }
     
     .metric-card {
-        background-color: rgba(30, 41, 59, 0.8);
-        border: 1px solid #475569;
+        background-color: rgba(255, 255, 255, 0.95);
+        border: 1px solid #e2e8f0;
         border-radius: 12px;
         padding: 1.5rem;
         margin: 1rem 0;
+        color: #1e293b;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
     
     .metric-header {
-        color: white;
+        color: #1e293b;
         font-size: 1.2rem;
         font-weight: 600;
         margin-bottom: 0.5rem;
     }
     
     .metric-description {
-        color: #cbd5e1;
+        color: #374151;
         font-size: 0.9rem;
         line-height: 1.4;
     }
@@ -84,19 +87,63 @@ st.markdown("""
     
     .footer {
         text-align: center;
-        color: #64748b;
+        color: white;
         font-size: 0.9rem;
         margin-top: 3rem;
         padding: 1rem;
+        opacity: 0.8;
     }
     
     .crawl-info {
-        background-color: rgba(49, 56, 86, 0.3);
-        border: 1px solid #313856;
+        background-color: rgba(255, 140, 66, 0.2);
+        border: 1px solid #ff8c42;
         border-radius: 8px;
         padding: 1rem;
         margin: 1rem 0;
-        color: #8b9dc3;
+        color: white;
+    }
+    
+    .api-key-section {
+        background-color: rgba(255, 255, 255, 0.95);
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        color: #1e293b;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Make all text inputs white background with dark text */
+    .stTextInput > div > div > input {
+        background-color: white;
+        color: #1e293b;
+        border: 1px solid #d1d5db;
+    }
+    
+    .stTextArea > div > div > textarea {
+        background-color: white;
+        color: #1e293b;
+        border: 1px solid #d1d5db;
+    }
+    
+    .stSelectbox > div > div > div {
+        background-color: white;
+        color: #1e293b;
+    }
+    
+    .stNumberInput > div > div > input {
+        background-color: white;
+        color: #1e293b;
+        border: 1px solid #d1d5db;
+    }
+    
+    /* Labels and text */
+    .stMarkdown, .stText {
+        color: white;
+    }
+    
+    label {
+        color: white !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -112,8 +159,37 @@ class AnalysisResults:
 
 def main():
     # Header
-    st.markdown('<h1 class="title">AI-Powered Topic Optimizer</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="title">AI-Powered Topic Optimiser</h1>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle">Elevate your content\'s AI readiness.</p>', unsafe_allow_html=True)
+    
+    # API Key Configuration Section
+    st.markdown('<div class="api-key-section">', unsafe_allow_html=True)
+    st.markdown('<h3 style="color: #1e293b; margin-top: 0;">🔑 API Configuration</h3>', unsafe_allow_html=True)
+    st.markdown('<p style="color: #374151; margin-bottom: 1rem;">Please provide your API keys to enable content analysis and web crawling features.</p>', unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        gemini_api_key = st.text_input(
+            "Google Gemini API Key",
+            type="password",
+            placeholder="Enter your Gemini API key",
+            help="Get your free API key from https://aistudio.google.com/app/apikey"
+        )
+
+    with col2:
+        firecrawl_api_key = st.text_input(
+            "Firecrawl API Key", 
+            type="password",
+            placeholder="Enter your Firecrawl API key",
+            help="Get your API key from https://www.firecrawl.dev/"
+        )
+
+    if not gemini_api_key:
+        st.warning("⚠️ Gemini API key is required for content analysis")
+    if not firecrawl_api_key:
+        st.warning("⚠️ Firecrawl API key is required for web crawling")
+
+    st.markdown('</div>', unsafe_allow_html=True)
     
     # Initialize session state
     if 'analysis_results' not in st.session_state:
@@ -144,7 +220,7 @@ def main():
         if st.session_state.input_mode == "manual":
             st.markdown("### 📝 Content Input")
             content = st.text_area(
-                "Enter your content to analyze:",
+                "Enter your content to analyse:",
                 height=200,
                 value=st.session_state.content,
                 placeholder="Paste your article, blog post, or any text content here..."
@@ -185,12 +261,9 @@ def main():
                     st.error("Please enter a URL")
                 elif not validate_url(url):
                     st.error("Please enter a valid URL (include http:// or https://)")
+                elif not firecrawl_api_key:
+                    st.error("Firecrawl API key is required for web crawling. Please enter your API key above.")
                 else:
-                    # Get Firecrawl API key
-                    firecrawl_api_key = os.getenv('FIRECRAWL_API_KEY')
-                    if not firecrawl_api_key:
-                        st.error("Firecrawl API key not found. Please set FIRECRAWL_API_KEY environment variable.")
-                    else:
                         with st.spinner("Crawling content..."):
                             try:
                                 firecrawl_service = FirecrawlService(firecrawl_api_key)
@@ -228,30 +301,27 @@ def main():
         queries = st.text_area(
             "List keywords or questions your content should rank for:",
             height=100,
-            placeholder="google top stories tracker\nsemantic search optimization\nAI content analysis"
+            placeholder="google top stories tracker\nsemantic search optimisation\nAI content analysis"
         )
         
-        # Analyze button
-        if st.button("⚡ Analyze Content", key="analyze_btn", type="primary"):
+        # Analyse button
+        if st.button("⚡ Analyse Content", key="analyze_btn", type="primary"):
             if not st.session_state.content.strip():
-                st.error("Please provide content to analyze")
+                st.error("Please provide content to analyse")
             elif not queries.strip():
                 st.error("Please provide target queries")
+            elif not gemini_api_key:
+                st.error("Gemini API key is required for content analysis. Please enter your API key above.")
             else:
                 query_list = [q.strip() for q in queries.split('\n') if q.strip()]
                 
                 with st.spinner("Generating insights..."):
                     try:
-                        # Get Gemini API key
-                        gemini_api_key = os.getenv('GEMINI_API_KEY')
-                        if not gemini_api_key:
-                            st.error("Gemini API key not found. Please set GEMINI_API_KEY environment variable.")
-                        else:
-                            analysis_service = AnalysisService(gemini_api_key)
-                            results = analysis_service.analyze_content(st.session_state.content, query_list)
-                            st.session_state.analysis_results = results
-                            st.success("Analysis complete!")
-                            st.rerun()
+                        analysis_service = AnalysisService(gemini_api_key)
+                        results = analysis_service.analyze_content(st.session_state.content, query_list)
+                        st.session_state.analysis_results = results
+                        st.success("Analysis complete!")
+                        st.rerun()
                     except Exception as e:
                         st.error(f"Analysis failed: {str(e)}")
     
@@ -262,7 +332,7 @@ def main():
         
         results = st.session_state.analysis_results
         
-        # Metrics visualization
+        # Metrics visualisation
         fig = create_metrics_chart(
             results.embedding_relevance_score,
             results.semantic_density_score,
@@ -287,7 +357,7 @@ def main():
                 for rec in results.recommendations:
                     st.markdown(f"• {rec}")
             else:
-                st.info("Content is well-optimized!")
+                st.info("Content is well-optimised!")
     
     # Metrics explanation section
     st.markdown("---")
@@ -306,7 +376,7 @@ def main():
             </div>
             <h3 class="metric-header">Embedding Relevance</h3>
             <p class="metric-description">
-                <strong>Calculation Method:</strong> We encode both content and queries using sentence-transformers (all-MiniLM-L6-v2), generating 384-dimensional embeddings. Score = cos(θ) = (A·B)/(||A||||B||) where A and B are normalized vectors. We compute pairwise similarities across all query-content chunks, then apply weighted averaging based on chunk importance (TF-IDF weighting) to derive the final 0-100 scaled score.
+                <strong>Calculation Method:</strong> We encode both content and queries using sentence-transformers (all-MiniLM-L6-v2), generating 384-dimensional embeddings. Score = cos(θ) = (A·B)/(||A||||B||) where A and B are normalised vectors. We compute pairwise similarities across all query-content chunks, then apply weighted averaging based on chunk importance (TF-IDF weighting) to derive the final 0-100 scaled score.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -321,7 +391,7 @@ def main():
             </div>
             <h3 class="metric-header">Semantic Density</h3>
             <p class="metric-description">
-                <strong>Calculation Method:</strong> We segment content into overlapping windows (512 tokens), extract BERT embeddings for each segment, then compute intra-cluster cohesion using silhouette analysis. Score = Σ(1-variance(embedding_cluster_i))/n_clusters × topic_coherence_coefficient. Topic coherence calculated via PMI (Pointwise Mutual Information) between co-occurring terms. Final normalization applies sigmoid transformation: f(x) = 100/(1+e^(-x)).
+                <strong>Calculation Method:</strong> We segment content into overlapping windows (512 tokens), extract BERT embeddings for each segment, then compute intra-cluster cohesion using silhouette analysis. Score = Σ(1-variance(embedding_cluster_i))/n_clusters × topic_coherence_coefficient. Topic coherence calculated via PMI (Pointwise Mutual Information) between co-occurring terms. Final normalisation applies sigmoid transformation: f(x) = 100/(1+e^(-x)).
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -336,7 +406,7 @@ def main():
             </div>
             <h3 class="metric-header">Authority Score</h3>
             <p class="metric-description">
-                <strong>Calculation Method:</strong> We employ a gradient boosting ensemble (XGBoost) trained on 47 engineered features: citation density, technical terminology frequency, factual claim verification via knowledge graphs, linguistic complexity (Flesch-Kincaid), and expertise indicators. Score = Σ(w_i × feature_i) where weights are learned through multi-objective optimization. Post-processing applies Platt scaling for probability calibration: P(authority) = 1/(1+exp(A×f+B)).
+                <strong>Calculation Method:</strong> We employ a gradient boosting ensemble (XGBoost) trained on 47 engineered features: citation density, technical terminology frequency, factual claim verification via knowledge graphs, linguistic complexity (Flesch-Kincaid), and expertise indicators. Score = Σ(w_i × feature_i) where weights are learned through multi-objective optimisation. Post-processing applies Platt scaling for probability calibration: P(authority) = 1/(1+exp(A×f+B)).
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -344,7 +414,7 @@ def main():
     # Footer
     st.markdown("""
     <div class="footer">
-        <p>&copy; 2024 AI-Powered Topic Optimizer. Powered by <a href="https://storyhawk.io/" target="_blank" style="color: #8b9dc3; text-decoration: none;">StoryHawk</a>.</p>
+        <p>&copy; 2024 AI-Powered Topic Optimiser. Powered by <a href="https://storyhawk.io/" target="_blank" style="color: white; text-decoration: none;">StoryHawk</a>.</p>
     </div>
     """, unsafe_allow_html=True)
 
