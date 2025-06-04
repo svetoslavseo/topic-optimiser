@@ -25,17 +25,15 @@ class FirecrawlService:
         try:
             result = self.app.scrape_url(
                 url,
-                params={
-                    'formats': ['markdown'],
-                    'onlyMainContent': True
-                }
+                formats=['markdown'],
+                only_main_content=True
             )
             
             if not result or not result.get('markdown'):
                 raise Exception('Failed to scrape content from the URL')
             
             return {
-                'url': result.get('url', url),
+                'url': result.get('metadata', {}).get('sourceURL', url),
                 'markdown': result['markdown'],
                 'title': result.get('metadata', {}).get('title'),
                 'description': result.get('metadata', {}).get('description')
@@ -59,12 +57,10 @@ class FirecrawlService:
         try:
             crawl_result = self.app.crawl_url(
                 url,
-                params={
-                    'limit': max_pages,
-                    'scrapeOptions': {
-                        'formats': ['markdown'],
-                        'onlyMainContent': True
-                    }
+                limit=max_pages,
+                scrape_options={
+                    'formats': ['markdown'],
+                    'only_main_content': True
                 }
             )
             
@@ -74,7 +70,7 @@ class FirecrawlService:
             results = []
             for item in crawl_result['data']:
                 results.append({
-                    'url': item.get('url', ''),
+                    'url': item.get('metadata', {}).get('sourceURL', ''),
                     'markdown': item.get('markdown', ''),
                     'title': item.get('metadata', {}).get('title'),
                     'description': item.get('metadata', {}).get('description')
