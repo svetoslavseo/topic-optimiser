@@ -193,7 +193,7 @@ const App: React.FC = () => {
             </div>
             <h3 className="text-xl font-semibold text-white mb-3">Embedding Relevance</h3>
             <p className="text-slate-300 text-sm leading-relaxed">
-              <strong>Calculation Method:</strong> We encode both content and queries using sentence-transformers (all-MiniLM-L6-v2), generating 384-dimensional embeddings. Score = cos(θ) = (A·B)/(||A||||B||) where A and B are normalized vectors. We compute pairwise similarities across all query-content chunks, then apply weighted averaging based on chunk importance (TF-IDF weighting) to derive the final 0-100 scaled score.
+              <strong>Technical Implementation:</strong> Content is intelligently chunked into 512-token segments with 50-token overlap to maintain context. Each chunk and query is processed through SentenceTransformer (all-MiniLM-L6-v2) generating 384-dimensional semantic embeddings. We compute a full similarity matrix between all content chunks and query embeddings using cosine similarity, then apply weighted averaging where chunk importance is determined by maximum query relevance with TF-IDF boosting for high-value content sections.
             </p>
           </div>
 
@@ -206,7 +206,7 @@ const App: React.FC = () => {
             </div>
             <h3 className="text-xl font-semibold text-white mb-3">Semantic Density</h3>
             <p className="text-slate-300 text-sm leading-relaxed">
-              <strong>Calculation Method:</strong> We segment content into overlapping windows (512 tokens), extract BERT embeddings for each segment, then compute intra-cluster cohesion using silhouette analysis. Score = Σ(1-variance(embedding_cluster_i))/n_clusters × topic_coherence_coefficient. Topic coherence calculated via PMI (Pointwise Mutual Information) between co-occurring terms. Final normalization applies sigmoid transformation: f(x) = 100/(1+e^(-x)).
+              <strong>Multi-Layered Analysis:</strong> Entity density calculated via spaCy NLP parsing extracting named entities normalized by token count. K-means clustering performed on chunk embeddings with silhouette score quality assessment measuring intra-cluster cohesion. TF-IDF term diversity analysis evaluating vocabulary richness and distribution. Final semantic density score computed as: (cluster_quality×0.4 + entity_density×0.3 + term_diversity×0.3) × 100, providing comprehensive topic coverage assessment.
             </p>
           </div>
 
@@ -219,7 +219,7 @@ const App: React.FC = () => {
             </div>
             <h3 className="text-xl font-semibold text-white mb-3">Authority Score</h3>
             <p className="text-slate-300 text-sm leading-relaxed">
-              <strong>Calculation Method:</strong> We employ a gradient boosting ensemble (XGBoost) trained on 47 engineered features: citation density, technical terminology frequency, factual claim verification via knowledge graphs, linguistic complexity (Flesch-Kincaid), and expertise indicators. Score = Σ(w_i × feature_i) where weights are learned through multi-objective optimization. Post-processing applies Platt scaling for probability calibration: P(authority) = 1/(1+exp(A×f+B)).
+              <strong>Four-Component Assessment:</strong> Linguistic complexity analysis using Flesch-Kincaid readability metrics combined with sentence structure evaluation. Citation pattern detection through regex matching identifying academic references, URLs, and formal citations. Technical terminology density measurement counting domain-specific vocabulary frequency. Authority embedding similarity comparing content against pre-loaded authoritative patterns. Final authority score: (complexity×0.25 + citations×0.30 + technical×0.20 + similarity×0.25) × 100.
             </p>
           </div>
         </div>

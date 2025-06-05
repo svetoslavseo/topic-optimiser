@@ -737,7 +737,7 @@ def main():
             </div>
             <h3 class="metric-header">Embedding Relevance</h3>
             <p class="metric-description">
-                <strong>Calculation Method:</strong> Uses sentence-transformers (all-MiniLM-L6-v2) for generating embeddings, implements cosine similarity between content and query embeddings, and applies TF-IDF weighting through TfidfVectorizer for importance-based scoring. Final score is normalized to 0-100 scale based on weighted similarity calculations.
+                <strong>Technical Implementation:</strong> Content is intelligently chunked into 512-token segments with 50-token overlap to maintain context. Each chunk and query is processed through SentenceTransformer (all-MiniLM-L6-v2) generating 384-dimensional semantic embeddings. We compute a full similarity matrix between all content chunks and query embeddings using cosine similarity, then apply weighted averaging where chunk importance is determined by maximum query relevance with TF-IDF boosting for high-value content sections.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -752,7 +752,7 @@ def main():
             </div>
             <h3 class="metric-header">Semantic Density</h3>
             <p class="metric-description">
-                <strong>Calculation Method:</strong> Uses topic clustering with HDBSCAN, performs entity parsing with spaCy, calculates silhouette scores for cluster quality assessment, and analyzes term diversity using TF-IDF. Entity density and cluster cohesion metrics are combined for the final semantic density score.
+                <strong>Multi-Layered Analysis:</strong> Entity density calculated via spaCy NLP parsing extracting named entities normalized by token count. K-means clustering performed on chunk embeddings with silhouette score quality assessment measuring intra-cluster cohesion. TF-IDF term diversity analysis evaluating vocabulary richness and distribution. Final semantic density score computed as: (cluster_quality×0.4 + entity_density×0.3 + term_diversity×0.3) × 100, providing comprehensive topic coverage assessment.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -767,7 +767,7 @@ def main():
             </div>
             <h3 class="metric-header">Authority Score</h3>
             <p class="metric-description">
-                <strong>Calculation Method:</strong> Implements Flesch-Kincaid readability analysis, detects citation patterns with regex matching, analyzes technical terminology frequency, and uses authority embeddings for comparison. Combines linguistic complexity indicators, citation density, and terminology metrics for final authority assessment.
+                <strong>Four-Component Assessment:</strong> Linguistic complexity analysis using Flesch-Kincaid readability metrics combined with sentence structure evaluation. Citation pattern detection through regex matching identifying academic references, URLs, and formal citations. Technical terminology density measurement counting domain-specific vocabulary frequency. Authority embedding similarity comparing content against pre-loaded authoritative patterns. Final authority score: (complexity×0.25 + citations×0.30 + technical×0.20 + similarity×0.25) × 100.
             </p>
         </div>
         """, unsafe_allow_html=True)

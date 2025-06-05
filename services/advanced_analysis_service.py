@@ -8,19 +8,59 @@ import spacy
 import networkx as nx
 from collections import Counter, defaultdict
 import re
-import textstat
+# Import textstat with fallback
+try:
+    import textstat
+except ImportError as e:
+    logger.warning(f"textstat import failed: {e}. Using fallback.")
+    
+    # Create a simple fallback textstat class
+    class TextStatFallback:
+        @staticmethod
+        def flesch_kincaid():
+            class FleschKincaid:
+                @staticmethod
+                def flesch_kincaid(text):
+                    # Simple fallback calculation
+                    return len(text.split()) / 10  # Rough approximation
+            return FleschKincaid()
+    
+    textstat = TextStatFallback()
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-# ML and embeddings
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.cluster import KMeans, DBSCAN
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.decomposition import PCA
-from sklearn.metrics import silhouette_score
-import umap.umap_ as umap
-import hdbscan
+# ML and embeddings with fallbacks
+try:
+    from sentence_transformers import SentenceTransformer
+    SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"sentence_transformers import failed: {e}")
+    SENTENCE_TRANSFORMERS_AVAILABLE = False
+
+try:
+    from sklearn.metrics.pairwise import cosine_similarity
+    from sklearn.cluster import KMeans, DBSCAN
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.decomposition import PCA
+    from sklearn.metrics import silhouette_score
+    SKLEARN_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"sklearn import failed: {e}")
+    SKLEARN_AVAILABLE = False
+
+try:
+    import umap.umap_ as umap
+    UMAP_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"umap import failed: {e}")
+    UMAP_AVAILABLE = False
+
+try:
+    import hdbscan
+    HDBSCAN_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"hdbscan import failed: {e}")
+    HDBSCAN_AVAILABLE = False
 
 # NLP
 import nltk
@@ -104,13 +144,21 @@ class AdvancedAnalysisService:
         """Initialize all required models"""
         try:
             # Sentence transformer for embeddings
-            self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-            logger.info("Loaded sentence transformer model")
+            if SENTENCE_TRANSFORMERS_AVAILABLE:
+                self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+                logger.info("Loaded sentence transformer model")
+            else:
+                self.embedding_model = None
+                logger.warning("Sentence transformers not available")
             
             # Cohere client (optional)
             if self.cohere_api_key:
-                self.cohere_client = cohere.Client(self.cohere_api_key)
-                logger.info("Initialized Cohere client")
+                try:
+                    self.cohere_client = cohere.Client(self.cohere_api_key)
+                    logger.info("Initialized Cohere client")
+                except Exception as e:
+                    logger.warning(f"Could not initialize Cohere: {e}")
+                    self.cohere_client = None
             
             # Gemini for additional analysis
             genai.configure(api_key=self.gemini_api_key)
@@ -124,14 +172,22 @@ class AdvancedAnalysisService:
                 self.nlp = None
                 
             # TF-IDF vectorizer
-            self.tfidf_vectorizer = TfidfVectorizer(
-                max_features=1000,
-                stop_words='english',
-                ngram_range=(1, 3)
-            )
+            if SKLEARN_AVAILABLE:
+                self.tfidf_vectorizer = TfidfVectorizer(
+                    max_features=1000,
+                    stop_words='english',
+                    ngram_range=(1, 3)
+                )
+            else:
+                self.tfidf_vectorizer = None
+                logger.warning("Sklearn not available - TF-IDF disabled")
             
             # Lemmatizer
-            self.lemmatizer = WordNetLemmatizer()
+            try:
+                self.lemmatizer = WordNetLemmatizer()
+            except Exception as e:
+                logger.warning(f"Could not initialize lemmatizer: {e}")
+                self.lemmatizer = None
             
         except Exception as e:
             logger.error(f"Error initializing models: {e}")
@@ -298,6 +354,10 @@ class AdvancedAnalysisService:
         if not texts:
             return np.array([])
         
+        if not self.embedding_model:
+            logger.warning("Embedding model not available, returning zero embeddings")
+            return np.zeros((len(texts), 384))
+        
         try:
             embeddings = self.embedding_model.encode(texts, convert_to_numpy=True)
             return embeddings
@@ -315,8 +375,15 @@ class AdvancedAnalysisService:
             return 0.0
         
         try:
-            # Compute similarity matrix
-            similarities = cosine_similarity(content_embeddings, query_embeddings)
+            if not SKLEARN_AVAILABLE:
+                logger.warning("Sklearn not available, using simple dot product similarity")
+                # Fallback to simple dot product similarity
+                content_norm = np.linalg.norm(content_embeddings, axis=1, keepdims=True)
+                query_norm = np.linalg.norm(query_embeddings, axis=1, keepdims=True)
+                similarities = np.dot(content_embeddings / content_norm, (query_embeddings / query_norm).T)
+            else:
+                # Compute similarity matrix
+                similarities = cosine_similarity(content_embeddings, query_embeddings)
             
             # Calculate weighted average similarity
             max_similarities = np.max(similarities, axis=0)  # Best match for each query
@@ -352,7 +419,7 @@ class AdvancedAnalysisService:
                 return 0.0
             
             # Perform clustering to identify topic clusters
-            if len(chunks) >= 3:
+            if len(chunks) >= 3 and SKLEARN_AVAILABLE:
                 n_clusters = min(5, len(chunks) // 2)
                 kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
                 cluster_labels = kmeans.fit_predict(chunk_embeddings)
@@ -375,13 +442,16 @@ class AdvancedAnalysisService:
                 entity_density = min(1.0, unique_entity_types / 20)  # Normalize to 0-1
             
             # Topic coherence using TF-IDF
-            tfidf_matrix = self.tfidf_vectorizer.fit_transform(chunks)
-            feature_names = self.tfidf_vectorizer.get_feature_names_out()
-            
-            # Calculate term diversity
-            term_scores = np.mean(tfidf_matrix.toarray(), axis=0)
-            top_terms = np.argsort(term_scores)[-20:]  # Top 20 terms
-            term_diversity = len(set(feature_names[top_terms])) / 20
+            if self.tfidf_vectorizer:
+                tfidf_matrix = self.tfidf_vectorizer.fit_transform(chunks)
+                feature_names = self.tfidf_vectorizer.get_feature_names_out()
+                
+                # Calculate term diversity
+                term_scores = np.mean(tfidf_matrix.toarray(), axis=0)
+                top_terms = np.argsort(term_scores)[-20:]  # Top 20 terms
+                term_diversity = len(set(feature_names[top_terms])) / 20
+            else:
+                term_diversity = 0.5  # Default value
             
             # Combine metrics
             final_score = (
