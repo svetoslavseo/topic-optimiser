@@ -10,6 +10,10 @@ from plotly.subplots import make_subplots
 from services.firecrawl_service import FirecrawlService
 from services.analysis_service import AnalysisService
 from components.metrics_charts import create_metrics_chart
+from components.advanced_charts import (
+    create_similarity_heatmap, create_semantic_map, create_topic_cluster_chart,
+    create_authority_signals_chart, create_semantic_gaps_chart, create_processing_metrics_chart
+)
 from utils.helpers import validate_url
 
 # Configure Streamlit page
@@ -118,6 +122,11 @@ class AnalysisResults:
     semantic_gaps: List[str]
     recommendations: List[str]
     content_source: str = ""
+    # Advanced analysis data
+    similarity_matrix: List[List[float]] = None
+    topic_clusters: Dict[str, Any] = None
+    semantic_map_data: Dict[str, Any] = None
+    processing_time: float = 0.0
 
 def main():
     # Header
@@ -139,8 +148,8 @@ def main():
             if st.button("📝 Manual Input", key="manual_mode"):
                 st.session_state.input_mode = "manual"
         with col2:
-            if st.button("🌐 Crawl URL", key="crawl_mode"):
-                st.session_state.input_mode = "crawl"
+            if st.button("🌐 Web Scraping", key="scrape_mode"):
+                st.session_state.input_mode = "scrape"
         
         # Initialize input mode if not set
         if 'input_mode' not in st.session_state:
@@ -159,72 +168,41 @@ def main():
             )
             st.session_state.content = content
             
-        else:  # crawl mode
-            st.markdown("### 🌐 Web Crawling")
+        else:  # scrape mode
+            st.markdown("### 🌐 Web Scraping")
             
             # URL input
             url = st.text_input(
-                "URL to crawl:",
+                "URL to scrape:",
                 placeholder="https://example.com"
             )
             
-            # Crawl options
-            col1, col2 = st.columns(2)
-            with col1:
-                crawl_mode = st.radio(
-                    "Crawl mode:",
-                    ["Single page", "Crawl website"],
-                    horizontal=True
-                )
-            with col2:
-                if crawl_mode == "Crawl website":
-                    max_pages = st.number_input(
-                        "Max pages to crawl:",
-                        min_value=1,
-                        max_value=50,
-                        value=5
-                    )
-                else:
-                    max_pages = 1
-            
-            # Crawl button
-            if st.button("🔍 " + ("Scrape Page" if crawl_mode == "Single page" else f"Crawl {max_pages} Pages")):
+            # Scrape button
+            if st.button("🔍 Scrape Page"):
                 if not url:
                     st.error("Please enter a URL")
                 elif not validate_url(url):
                     st.error("Please enter a valid URL (include http:// or https://)")
                 elif 'firecrawl_api_key' not in st.session_state or not st.session_state.get('firecrawl_api_key'):
-                    st.error("Firecrawl API key is required for web crawling. Please enter your API key in the configuration section below.")
+                    st.error("Firecrawl API key is required for web scraping. Please enter your API key in the configuration section below.")
                 else:
-                        with st.spinner("Crawling content..."):
-                            try:
-                                firecrawl_service = FirecrawlService(st.session_state.firecrawl_api_key)
-                                
-                                if crawl_mode == "Single page":
-                                    result = firecrawl_service.scrape_url(url)
-                                    st.session_state.content = result['markdown']
-                                    st.session_state.content_source = f"Crawled from: {result['url']}"
-                                    if result.get('title'):
-                                        st.session_state.content_source += f" ({result['title']})"
-                                else:
-                                    results = firecrawl_service.crawl_website(url, max_pages)
-                                    if results:
-                                        combined_content = "\n\n---\n\n".join([
-                                            f"## Page {i+1}: {result.get('title', result['url'])}\n\n{result['markdown']}"
-                                            for i, result in enumerate(results)
-                                        ])
-                                        st.session_state.content = combined_content
-                                        st.session_state.content_source = f"Crawled {len(results)} pages from {url}"
-                                    else:
-                                        st.error("No pages were crawled")
-                                        
-                                st.success("Content crawled successfully!")
-                                st.rerun()
-                                
-                            except Exception as e:
-                                st.error(f"Error crawling URL: {str(e)}")
+                    with st.spinner("Scraping content..."):
+                        try:
+                            firecrawl_service = FirecrawlService(st.session_state.firecrawl_api_key)
+                            
+                            result = firecrawl_service.scrape_url(url)
+                            st.session_state.content = result['markdown']
+                            st.session_state.content_source = f"Scraped from: {result['url']}"
+                            if result.get('title'):
+                                st.session_state.content_source += f" ({result['title']})"
+                                    
+                            st.success("Content scraped successfully!")
+                            st.rerun()
+                            
+                        except Exception as e:
+                            st.error(f"Error scraping URL: {str(e)}")
         
-        # Show crawled content source
+        # Show scraped content source
         if st.session_state.content_source:
             st.markdown(f'<div class="crawl-info">📄 {st.session_state.content_source}</div>', unsafe_allow_html=True)
         
@@ -294,13 +272,91 @@ def main():
         
         results = st.session_state.analysis_results
         
-        # Metrics visualisation
+        # Check if advanced analysis data is available
+        has_advanced_data = (
+            hasattr(results, 'similarity_matrix') and results.similarity_matrix and
+            hasattr(results, 'processing_time') and results.processing_time > 0
+        )
+        
+        if has_advanced_data:
+            st.info("🚀 **Advanced ML Analysis Active** - Real embeddings, semantic clustering, and authority scoring")
+        else:
+            st.info("📝 **Basic AI Analysis** - Using Gemini AI prompts for scoring")
+        
+        # Core metrics visualization
         fig = create_metrics_chart(
             results.embedding_relevance_score,
             results.semantic_density_score,
             results.authority_score
         )
         st.plotly_chart(fig, use_container_width=True)
+        
+        # Advanced visualizations (if available)
+        if has_advanced_data:
+            st.markdown("#### 🔬 Advanced Analysis Visualizations")
+            
+            # Create tabs for different visualizations
+            tab1, tab2, tab3, tab4, tab5 = st.tabs([
+                "📊 Processing Summary", 
+                "🔥 Similarity Matrix", 
+                "🗺️ Semantic Map", 
+                "🎯 Topic Clusters",
+                "📈 Authority Signals"
+            ])
+            
+            with tab1:
+                # Processing metrics
+                processing_fig = create_processing_metrics_chart(
+                    results.processing_time,
+                    len(results.similarity_matrix) if results.similarity_matrix else 0,
+                    len(results.similarity_matrix[0]) if results.similarity_matrix and results.similarity_matrix[0] else 0,
+                    results.embedding_relevance_score,
+                    results.semantic_density_score,
+                    results.authority_score
+                )
+                st.plotly_chart(processing_fig, use_container_width=True)
+            
+            with tab2:
+                # Similarity heatmap
+                if results.similarity_matrix:
+                    # Extract chunks and queries from the analysis (this is a simplified version)
+                    # In a real implementation, you'd pass the actual chunks and queries
+                    chunks = [f"Content chunk {i+1}" for i in range(len(results.similarity_matrix))]
+                    queries = [f"Query {i+1}" for i in range(len(results.similarity_matrix[0]))] if results.similarity_matrix[0] else []
+                    
+                    similarity_fig = create_similarity_heatmap(results.similarity_matrix, chunks, queries)
+                    st.plotly_chart(similarity_fig, use_container_width=True)
+                else:
+                    st.info("No similarity matrix data available")
+            
+            with tab3:
+                # Semantic map
+                if results.semantic_map_data:
+                    semantic_fig = create_semantic_map(results.semantic_map_data)
+                    st.plotly_chart(semantic_fig, use_container_width=True)
+                else:
+                    st.info("No semantic map data available")
+            
+            with tab4:
+                # Topic clusters
+                if results.topic_clusters:
+                    cluster_fig = create_topic_cluster_chart(results.topic_clusters)
+                    st.plotly_chart(cluster_fig, use_container_width=True)
+                else:
+                    st.info("No topic clustering data available")
+            
+            with tab5:
+                # Authority signals (convert semantic_gaps to authority signals format for demo)
+                authority_signals = [
+                    {
+                        'signal_type': 'content_quality',
+                        'impact_score': results.authority_score,
+                        'confidence': 0.8,
+                        'description': 'Overall content authority assessment'
+                    }
+                ]
+                authority_fig = create_authority_signals_chart(authority_signals)
+                st.plotly_chart(authority_fig, use_container_width=True)
         
         # Detailed results in columns
         col1, col2 = st.columns(2)
@@ -338,7 +394,7 @@ def main():
             </div>
             <h3 class="metric-header">Embedding Relevance</h3>
             <p class="metric-description">
-                <strong>Calculation Method:</strong> We encode both content and queries using sentence-transformers (all-MiniLM-L6-v2), generating 384-dimensional embeddings. Score = cos(θ) = (A·B)/(||A||||B||) where A and B are normalised vectors. We compute pairwise similarities across all query-content chunks, then apply weighted averaging based on chunk importance (TF-IDF weighting) to derive the final 0-100 scaled score.
+                <strong>Calculation Method:</strong> Uses sentence-transformers (all-MiniLM-L6-v2) for generating embeddings, implements cosine similarity between content and query embeddings, and applies TF-IDF weighting through TfidfVectorizer for importance-based scoring. Final score is normalized to 0-100 scale based on weighted similarity calculations.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -353,7 +409,7 @@ def main():
             </div>
             <h3 class="metric-header">Semantic Density</h3>
             <p class="metric-description">
-                <strong>Calculation Method:</strong> We segment content into overlapping windows (512 tokens), extract BERT embeddings for each segment, then compute intra-cluster cohesion using silhouette analysis. Score = Σ(1-variance(embedding_cluster_i))/n_clusters × topic_coherence_coefficient. Topic coherence calculated via PMI (Pointwise Mutual Information) between co-occurring terms. Final normalisation applies sigmoid transformation: f(x) = 100/(1+e^(-x)).
+                <strong>Calculation Method:</strong> Uses topic clustering with HDBSCAN, performs entity parsing with spaCy, calculates silhouette scores for cluster quality assessment, and analyzes term diversity using TF-IDF. Entity density and cluster cohesion metrics are combined for the final semantic density score.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -368,7 +424,7 @@ def main():
             </div>
             <h3 class="metric-header">Authority Score</h3>
             <p class="metric-description">
-                <strong>Calculation Method:</strong> We employ a gradient boosting ensemble (XGBoost) trained on 47 engineered features: citation density, technical terminology frequency, factual claim verification via knowledge graphs, linguistic complexity (Flesch-Kincaid), and expertise indicators. Score = Σ(w_i × feature_i) where weights are learned through multi-objective optimisation. Post-processing applies Platt scaling for probability calibration: P(authority) = 1/(1+exp(A×f+B)).
+                <strong>Calculation Method:</strong> Implements Flesch-Kincaid readability analysis, detects citation patterns with regex matching, analyzes technical terminology frequency, and uses authority embeddings for comparison. Combines linguistic complexity indicators, citation density, and terminology metrics for final authority assessment.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -377,7 +433,7 @@ def main():
     st.markdown("---")
     st.markdown('<div class="api-key-section">', unsafe_allow_html=True)
     st.markdown('<h3 style="color: #2c3e50; margin-top: 0;">🔑 API Configuration</h3>', unsafe_allow_html=True)
-    st.markdown('<p style="color: #495057; margin-bottom: 1rem;">Please provide your API keys to enable content analysis and web crawling features.</p>', unsafe_allow_html=True)
+    st.markdown('<p style="color: #495057; margin-bottom: 1rem;">Please provide your API keys to enable content analysis and web scraping features.</p>', unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -397,7 +453,7 @@ def main():
             st.info("ℹ️ Required for content analysis")
 
     with col2:
-        st.markdown("**Firecrawl API Key** (Required for web crawling)")
+        st.markdown("**Firecrawl API Key** (Required for web scraping)")
         firecrawl_api_key = st.text_input(
             "Firecrawl API Key", 
             type="password",
@@ -410,7 +466,7 @@ def main():
             st.session_state.firecrawl_api_key = firecrawl_api_key
             st.success("✅ Firecrawl API key provided")
         else:
-            st.info("ℹ️ Required for web crawling")
+            st.info("ℹ️ Required for web scraping")
 
     st.markdown('</div>', unsafe_allow_html=True)
     
