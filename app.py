@@ -24,92 +24,431 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for styling
+# Custom CSS for modern, beautiful styling
 st.markdown("""
 <style>
+    /* Import Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    /* Global Styles */
     .main {
-        background-color: white;
-        color: black;
+        background: linear-gradient(135deg, #313856 0%, #2c3e50 50%, #34495e 100%);
+        color: #ffffff;
+        font-family: 'Inter', sans-serif;
+        min-height: 100vh;
     }
     
     .stApp {
-        background-color: white;
+        background: linear-gradient(135deg, #313856 0%, #2c3e50 50%, #34495e 100%);
     }
     
+    /* Ensure all text has high contrast */
+    * {
+        color: #ffffff !important;
+    }
+    
+    /* Override Streamlit default text colors */
+    .stMarkdown, .stMarkdown p, .stMarkdown div {
+        color: #ffffff !important;
+    }
+    
+    /* Ensure all form labels are visible */
+    label, .stSelectbox label, .stTextInput label, .stTextArea label, .stNumberInput label {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    
+    /* Ensure help text is visible */
+    .stTextInput .help, .stTextArea .help, .stSelectbox .help {
+        color: rgba(255, 255, 255, 0.8) !important;
+    }
+    
+    /* Generic text elements */
+    p, span, div, h1, h2, h3, h4, h5, h6 {
+        color: #ffffff !important;
+    }
+    
+    /* Streamlit widgets text */
+    .stSelectbox > div > div {
+        color: #ffffff !important;
+    }
+    
+    /* Main container with glassmorphism effect */
+    .main-container {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 2rem;
+        margin: 1rem 0;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    }
+    
+    /* Typography */
     .title {
-        color: #2c3e50;
+        background: linear-gradient(45deg, #ffffff, #e0e7ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         text-align: center;
-        font-size: 2.5rem;
-        font-weight: bold;
-        margin-bottom: 1rem;
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        font-family: 'Inter', sans-serif;
     }
     
     .subtitle {
-        color: #7f8c8d;
+        color: #e0e7ff;
         text-align: center;
-        font-size: 1.1rem;
-        margin-bottom: 2rem;
+        font-size: 1.2rem;
+        font-weight: 300;
+        margin-bottom: 3rem;
+        opacity: 0.9;
+    }
+    
+    /* Section Headers */
+    .section-header {
+        color: #ffffff !important;
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin: 2rem 0 1rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    /* Cards */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(15px);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 1.5rem;
+        margin: 1rem 0;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+        transition: all 0.3s ease;
+    }
+    
+    .glass-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.3);
     }
     
     .metric-card {
-        background-color: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin: 1rem 0;
-        color: black;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 2rem;
+        margin: 1.5rem 0;
+        color: white;
+        text-align: center;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+        border-radius: 20px 20px 0 0;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 45px 0 rgba(31, 38, 135, 0.4);
     }
     
     .metric-header {
-        color: #2c3e50;
-        font-size: 1.1rem;
+        color: #ffffff;
+        font-size: 1.3rem;
         font-weight: 600;
-        margin-bottom: 0.5rem;
+        margin-bottom: 1rem;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
     
     .metric-description {
-        color: #495057;
-        font-size: 0.9rem;
-        line-height: 1.4;
+        color: #e0e7ff;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        opacity: 0.9;
     }
     
+    /* Input Mode Buttons */
     .stButton > button {
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        padding: 0.5rem 1rem;
-        font-weight: 500;
+        background: linear-gradient(145deg, #ff6b6b, #ff8e42) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 15px !important;
+        padding: 1rem 2rem !important;
+        font-weight: 700 !important;
+        font-size: 1.1rem !important;
+        font-family: 'Inter', sans-serif !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 6px 20px 0 rgba(255, 107, 107, 0.4) !important;
+        text-transform: none !important;
+        letter-spacing: 0.5px !important;
+        min-width: 180px !important;
+        border: 2px solid rgba(255, 255, 255, 0.2) !important;
     }
     
     .stButton > button:hover {
-        background-color: #0056b3;
+        background: linear-gradient(145deg, #ff5252, #ff7a28) !important;
+        transform: translateY(-3px) !important;
+        box-shadow: 0 10px 30px 0 rgba(255, 107, 107, 0.6) !important;
+        border: 2px solid rgba(255, 255, 255, 0.4) !important;
     }
     
+    /* Specific styling for mode selection buttons */
+    .mode-button {
+        margin: 0 auto !important;
+        display: block !important;
+    }
+    
+    /* Center the button containers */
+    .stButton {
+        text-align: center !important;
+        margin: 1rem 0 !important;
+    }
+    
+    /* Add some spacing between mode selection buttons */
+    .stButton > button {
+        margin: 0.5rem !important;
+    }
+    
+    /* Mode selection buttons specific styling */
+    .stButton > button[key="manual_mode"],
+    .stButton > button[key="scrape_mode"] {
+        background: linear-gradient(145deg, #ff6b6b, #ff8e42) !important;
+        box-shadow: 0 6px 20px 0 rgba(255, 107, 107, 0.4) !important;
+    }
+    
+    .stButton > button[key="manual_mode"]:hover,
+    .stButton > button[key="scrape_mode"]:hover {
+        background: linear-gradient(145deg, #ff5252, #ff7a28) !important;
+        box-shadow: 0 10px 30px 0 rgba(255, 107, 107, 0.6) !important;
+    }
+    
+    /* Scrape Page button - yellow/orange theme */
+    .stButton > button:not([kind="primary"]):not([key="manual_mode"]):not([key="scrape_mode"]) {
+        background: linear-gradient(145deg, #fbbf24, #f59e0b) !important;
+        box-shadow: 0 6px 20px 0 rgba(251, 191, 36, 0.4) !important;
+        color: #1f2937 !important;
+        font-weight: 700 !important;
+        border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    }
+    
+    .stButton > button:not([kind="primary"]):not([key="manual_mode"]):not([key="scrape_mode"]):hover {
+        background: linear-gradient(145deg, #f59e0b, #d97706) !important;
+        box-shadow: 0 10px 30px 0 rgba(251, 191, 36, 0.6) !important;
+        color: #111827 !important;
+        border: 2px solid rgba(255, 255, 255, 0.5) !important;
+    }
+    
+    /* Primary Action Button */
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(145deg, #4ecdc4, #44a08d) !important;
+        box-shadow: 0 6px 20px 0 rgba(78, 205, 196, 0.4) !important;
+        font-size: 1.2rem !important;
+        padding: 1.2rem 2.5rem !important;
+        font-weight: 700 !important;
+        border-radius: 20px !important;
+        border: 2px solid rgba(255, 255, 255, 0.3) !important;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
+    }
+    
+    .stButton > button[kind="primary"]:hover {
+        background: linear-gradient(145deg, #26d0ce, #3b9f8a) !important;
+        box-shadow: 0 10px 30px 0 rgba(78, 205, 196, 0.6) !important;
+        transform: translateY(-3px) !important;
+        border: 2px solid rgba(255, 255, 255, 0.5) !important;
+    }
+    
+    /* Text Areas and Inputs */
+    .stTextArea > div > div > textarea {
+        background: rgba(255, 255, 255, 0.25) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        border-radius: 12px !important;
+        color: #1f2937 !important;
+        font-family: 'Inter', sans-serif !important;
+        padding: 1rem !important;
+        font-size: 1rem !important;
+        font-weight: 500 !important;
+    }
+    
+    .stTextArea > div > div > textarea::placeholder {
+        color: rgba(31, 41, 55, 0.6) !important;
+        font-weight: 400 !important;
+    }
+    
+    .stTextInput > div > div > input {
+        background: rgba(255, 255, 255, 0.25) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        border-radius: 12px !important;
+        color: #1f2937 !important;
+        font-family: 'Inter', sans-serif !important;
+        padding: 0.75rem 1rem !important;
+        font-size: 1rem !important;
+        font-weight: 500 !important;
+    }
+    
+    .stTextInput > div > div > input::placeholder {
+        color: rgba(31, 41, 55, 0.6) !important;
+        font-weight: 400 !important;
+    }
+    
+    /* Input Labels */
+    .stTextArea > label, .stTextInput > label {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        margin-bottom: 0.5rem !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    
+    /* Info boxes */
+    .crawl-info {
+        background: linear-gradient(145deg, rgba(74, 222, 128, 0.2), rgba(34, 197, 94, 0.1));
+        border: 1px solid rgba(74, 222, 128, 0.3);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin: 1rem 0;
+        color: #dcfce7;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 15px 0 rgba(74, 222, 128, 0.1);
+    }
+    
+    /* API Configuration Section */
+    .api-key-section {
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 2rem;
+        margin: 3rem 0;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.3);
+    }
+    
+    .api-key-section h3 {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+        margin-bottom: 1rem !important;
+        font-family: 'Inter', sans-serif !important;
+    }
+    
+    .api-key-section p {
+        color: #e0e7ff !important;
+        margin-bottom: 1.5rem !important;
+        opacity: 0.9;
+    }
+    
+    /* Success/Error Messages */
+    .stSuccess > div {
+        background: linear-gradient(145deg, rgba(74, 222, 128, 0.2), rgba(34, 197, 94, 0.1)) !important;
+        border: 1px solid rgba(74, 222, 128, 0.3) !important;
+        border-radius: 12px !important;
+        backdrop-filter: blur(10px) !important;
+        color: #dcfce7 !important;
+    }
+    
+    .stError > div {
+        background: linear-gradient(145deg, rgba(248, 113, 113, 0.2), rgba(239, 68, 68, 0.1)) !important;
+        border: 1px solid rgba(248, 113, 113, 0.3) !important;
+        border-radius: 12px !important;
+        backdrop-filter: blur(10px) !important;
+        color: #fecaca !important;
+    }
+    
+    .stInfo > div {
+        background: linear-gradient(145deg, rgba(96, 165, 250, 0.2), rgba(59, 130, 246, 0.1)) !important;
+        border: 1px solid rgba(96, 165, 250, 0.3) !important;
+        border-radius: 12px !important;
+        backdrop-filter: blur(10px) !important;
+        color: #dbeafe !important;
+    }
+    
+    /* Divider */
+    hr {
+        border: none !important;
+        height: 1px !important;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent) !important;
+        margin: 2rem 0 !important;
+    }
+    
+    /* Footer */
     .footer {
         text-align: center;
-        color: #6c757d;
+        color: #e0e7ff;
         font-size: 0.9rem;
-        margin-top: 3rem;
-        padding: 1rem;
-        border-top: 1px solid #dee2e6;
+        margin-top: 4rem;
+        padding: 2rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        opacity: 0.8;
     }
     
-    .crawl-info {
-        background-color: #e3f2fd;
-        border: 1px solid #2196f3;
-        border-radius: 6px;
-        padding: 1rem;
-        margin: 1rem 0;
-        color: #1565c0;
+    .footer a {
+        color: #fbbf24 !important;
+        text-decoration: none !important;
+        font-weight: 500;
+        transition: all 0.3s ease;
     }
     
-    .api-key-section {
-        background-color: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin: 2rem 0;
+    .footer a:hover {
+        color: #f59e0b !important;
+        text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+    }
+    
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .main-container {
+        animation: fadeInUp 0.8s ease-out;
+    }
+    
+    /* Hide Streamlit branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(145deg, #313856, #2c3e50);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(145deg, #2c3e50, #34495e);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -129,8 +468,9 @@ class AnalysisResults:
     processing_time: float = 0.0
 
 def main():
-    # Header
+    # Header with improved design
     st.markdown('<h1 class="title">AI-Powered Topic Optimiser</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="subtitle">Elevate your content\'s AI readiness with advanced semantic analysis</p>', unsafe_allow_html=True)
     
     # Initialize session state
     if 'analysis_results' not in st.session_state:
@@ -142,14 +482,17 @@ def main():
     
     # Main container
     with st.container():
-        # Input mode selection
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("📝 Manual Input", key="manual_mode"):
-                st.session_state.input_mode = "manual"
+        # Input mode selection - centered
+        col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            if st.button("🌐 Web Scraping", key="scrape_mode"):
-                st.session_state.input_mode = "scrape"
+            # Create two sub-columns for the buttons
+            btn_col1, btn_col2 = st.columns(2)
+            with btn_col1:
+                if st.button("📝 Manual Input", key="manual_mode"):
+                    st.session_state.input_mode = "manual"
+            with btn_col2:
+                if st.button("🌐 Web Scraping", key="scrape_mode"):
+                    st.session_state.input_mode = "scrape"
         
         # Initialize input mode if not set
         if 'input_mode' not in st.session_state:
@@ -159,7 +502,7 @@ def main():
         
         # Content input section
         if st.session_state.input_mode == "manual":
-            st.markdown("### 📝 Content Input")
+            st.markdown('<div class="section-header">📝 Content Input</div>', unsafe_allow_html=True)
             content = st.text_area(
                 "Enter your content to analyse:",
                 height=200,
@@ -169,7 +512,7 @@ def main():
             st.session_state.content = content
             
         else:  # scrape mode
-            st.markdown("### 🌐 Web Scraping")
+            st.markdown('<div class="section-header">🌐 Web Scraping</div>', unsafe_allow_html=True)
             
             # URL input
             url = st.text_input(
@@ -207,7 +550,7 @@ def main():
             st.markdown(f'<div class="crawl-info">📄 {st.session_state.content_source}</div>', unsafe_allow_html=True)
         
         # Target queries input
-        st.markdown("### 🎯 Target Queries")
+        st.markdown('<div class="section-header">🎯 Target Queries</div>', unsafe_allow_html=True)
         queries = st.text_area(
             "List keywords or questions your content should rank for:",
             height=100,
@@ -268,7 +611,7 @@ def main():
     # Analysis Results Section
     if st.session_state.analysis_results:
         st.markdown("---")
-        st.markdown("### ⚡ Analysis Results")
+        st.markdown('<div class="section-header">⚡ Analysis Results</div>', unsafe_allow_html=True)
         
         results = st.session_state.analysis_results
         
@@ -293,7 +636,7 @@ def main():
         
         # Advanced visualizations (if available)
         if has_advanced_data:
-            st.markdown("#### 🔬 Advanced Analysis Visualizations")
+            st.markdown('<div class="section-header">🔬 Advanced Analysis Visualizations</div>', unsafe_allow_html=True)
             
             # Create tabs for different visualizations
             tab1, tab2, tab3, tab4, tab5 = st.tabs([

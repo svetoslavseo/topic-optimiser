@@ -18,11 +18,16 @@ class AnalysisResults:
     semantic_gaps: List[str]
     recommendations: List[str]
     content_source: str = ""
+    # Advanced analysis data
+    similarity_matrix: List[List[float]] = None
+    topic_clusters: Dict[str, Any] = None
+    semantic_map_data: Dict[str, Any] = None
+    processing_time: float = 0.0
 
 class AnalysisService:
-    """Service for analyzing content using Google Gemini AI"""
+    """Service for analyzing content using Google Gemini AI with advanced ML capabilities"""
     
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, cohere_api_key: str = None, use_advanced: bool = True):
         if not api_key:
             raise ValueError("Gemini API key is required")
         
@@ -67,6 +72,20 @@ class AnalysisService:
             raise ValueError(f"Failed to initialize Gemini model: {e}")
         
         self.api_key = api_key
+        self.use_advanced = use_advanced
+        
+        # Initialize advanced analysis service if requested
+        if use_advanced:
+            try:
+                from .advanced_analysis_service import AdvancedAnalysisService
+                self.advanced_service = AdvancedAnalysisService(api_key, cohere_api_key)
+                logger.info("Advanced analysis service initialized successfully")
+            except Exception as e:
+                logger.warning(f"Could not initialize advanced analysis: {e}. Falling back to basic analysis.")
+                self.advanced_service = None
+                self.use_advanced = False
+        else:
+            self.advanced_service = None
     
     def test_api_connection(self) -> tuple[bool, str]:
         """Test if the API key is valid and working"""
@@ -118,7 +137,7 @@ class AnalysisService:
     
     def analyze_content(self, content: str, queries: List[str]) -> AnalysisResults:
         """
-        Analyze content for semantic optimization metrics
+        Analyze content for semantic optimization metrics using advanced ML if available
         
         Args:
             content: The content to analyze
@@ -127,7 +146,33 @@ class AnalysisService:
         Returns:
             AnalysisResults object with scores and recommendations
         """
+        # Try advanced analysis first
+        if self.use_advanced and self.advanced_service:
+            try:
+                logger.info("Using advanced analysis with real embeddings and ML")
+                advanced_results = self.advanced_service.analyze_content(content, queries)
+                
+                # Convert to basic AnalysisResults format
+                return AnalysisResults(
+                    embedding_relevance_score=advanced_results.embedding_relevance_score,
+                    semantic_density_score=advanced_results.semantic_density_score,
+                    authority_score=advanced_results.authority_score,
+                    semantic_gaps=[gap.description for gap in advanced_results.semantic_gaps],
+                    recommendations=advanced_results.recommendations,
+                    content_source=advanced_results.content_source,
+                    similarity_matrix=advanced_results.similarity_matrix,
+                    topic_clusters=advanced_results.topic_clusters,
+                    semantic_map_data=advanced_results.semantic_map_data,
+                    processing_time=advanced_results.processing_time
+                )
+                
+            except Exception as e:
+                logger.warning(f"Advanced analysis failed, falling back to basic: {e}")
+                # Fall through to basic analysis
+        
+        # Basic analysis using Gemini AI prompts
         try:
+            logger.info("Using basic AI-based analysis")
             prompt = self._create_analysis_prompt(content, queries)
             response = self.model.generate_content(prompt)
             
@@ -238,7 +283,7 @@ class AnalysisService:
     
     def _extract_score(self, text: str, score_name: str) -> float:
         """Extract a score from the response text"""
-        pattern = f"{score_name}[:\s]*(\d+)"
+        pattern = rf"{score_name}[:\s]*(\d+)"
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
             score = int(match.group(1))
@@ -248,7 +293,7 @@ class AnalysisService:
     def _extract_list_items(self, text: str, section_name: str) -> List[str]:
         """Extract list items from a section"""
         # Find the section
-        pattern = f"{section_name}[:\s]*\n(.*?)(?=\n[A-Z_]+:|$)"
+        pattern = rf"{section_name}[:\s]*\n(.*?)(?=\n[A-Z_]+:|$)"
         match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
         
         if not match:
